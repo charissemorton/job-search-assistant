@@ -4701,10 +4701,15 @@ async function getUserSubscription() {
         function handleWelcomeAnalyze() {
             const input = document.getElementById('welcomeJobInput');
             if (!input || !input.value.trim()) return;
-            // Pre-fill the job analysis textarea and navigate
-            const jobInput = document.getElementById('job-description');
-            if (jobInput) jobInput.value = input.value.trim();
-            showSection('job-analysis-section');
+            const jd = input.value.trim();
+            // Navigate first (showSection clears the textarea), then repopulate and
+            // analyze via the onShown callback — fires only after the section is
+            // actually shown, and never if an anonymous user is bounced to signup.
+            showSection('job-analysis-section', () => {
+                const jobInput = document.getElementById('job-description');
+                if (jobInput) jobInput.value = jd;
+                analyzeJob();
+            });
         }
 
         /**
@@ -5502,7 +5507,89 @@ async function getUserSubscription() {
             
             return temp.innerHTML;
         }
-        
+
+        /**
+         * Render generated document Markdown to safe HTML for on-screen preview.
+         * Scope matches what the generation prompts emit and what the DOCX builders
+         * parse: #{1,6} headers, **bold** (inline + whole-line), -/• bullets, and
+         * paragraph/line breaks. No tables, links, images, or code — none are produced.
+         *
+         * XSS-safe: every piece of source text is escaped via escapeHtml BEFORE any
+         * formatting markers are interpreted. The markers (** # -) are ASCII and pass
+         * through escapeHtml unchanged, so we can safely match them post-escape.
+         * Replaces sanitizeHtml at the three document-output preview surfaces.
+         */
+        function renderMarkdown(text) {
+            if (text === null || text === undefined) return '';
+            if (typeof text !== 'string') text = String(text);
+
+            // Convert already-escaped inline **bold** → <strong> and *italic* → <em>.
+            // Bold is consumed FIRST so its ** markers are gone before single-* italic
+            // matching runs; both operate on escaped text (markers are ASCII, intact),
+            // so there is no injection surface.
+            const inlineFormat = (escaped) =>
+                escaped
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+
+            const lines = text.split('\n');
+            const html = [];
+            let inList = false;
+
+            const closeList = () => {
+                if (inList) { html.push('</ul>'); inList = false; }
+            };
+
+            for (let raw of lines) {
+                const trimmed = raw.trim();
+
+                // Blank line → paragraph spacing (close any open list first)
+                if (trimmed === '') {
+                    closeList();
+                    html.push('<div style="height:10px"></div>');
+                    continue;
+                }
+
+                // Horizontal-rule style separators (---, ***, ___) → skip, as DOCX does
+                if (/^[-*_]{3,}$/.test(trimmed)) {
+                    closeList();
+                    continue;
+                }
+
+                // Header: #{1,6} + space
+                const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+                if (headerMatch) {
+                    closeList();
+                    const content = inlineFormat(escapeHtml(headerMatch[2]));
+                    html.push('<div style="font-weight:700;color:#0f172a;font-size:15px;margin:14px 0 6px;">' + content + '</div>');
+                    continue;
+                }
+
+                // Whole-line bold (**Title**) treated as a sub-header
+                if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
+                    closeList();
+                    const inner = trimmed.slice(2, -2);
+                    html.push('<div style="font-weight:700;color:#0f172a;margin:8px 0 4px;">' + escapeHtml(inner) + '</div>');
+                    continue;
+                }
+
+                // Bullet: -, •, or * followed by space
+                const bulletMatch = trimmed.match(/^[-•*]\s+(.+)$/);
+                if (bulletMatch) {
+                    if (!inList) { html.push('<ul style="margin:4px 0 4px 0;padding-left:20px;">'); inList = true; }
+                    html.push('<li style="margin-bottom:4px;">' + inlineFormat(escapeHtml(bulletMatch[1])) + '</li>');
+                    continue;
+                }
+
+                // Plain line
+                closeList();
+                html.push('<div style="margin-bottom:2px;">' + inlineFormat(escapeHtml(trimmed)) + '</div>');
+            }
+            closeList();
+
+            return html.join('');
+        }
+
         /**
          * Validate profile data structure to prevent XSS from tampered localStorage
          */
@@ -6215,12 +6302,18 @@ async function getUserSubscription() {
             const file = generatedFiles.find(f => f.id === fileId);
             if (!file) return;
 
-            currentViewedFileContent = file.content;
+            // Clean leaked AI commentary from saved resumes at display time.
+            // Cover letters are never sanitized (they legitimately address the reader).
+            const displayContent = file.type === 'resume'
+                ? stripLeakedCommentary(file.content)
+                : file.content;
+
+            currentViewedFileContent = displayContent;
 
             const resultsContent = document.getElementById('results-content');
             resultsContent.innerHTML = `
                 <h3>${file.type === 'resume' ? 'Resume' : 'Cover Letter'} - ${escapeHtml(file.jobTitle)}</h3>
-                <div class="document-output">${sanitizeHtml(file.content)}</div>
+                <div class="document-output">${renderMarkdown(displayContent)}</div>
                 <div class="button-group" style="margin-top: 24px;">
                     <button class="btn-secondary" onclick="copyCurrentViewedFile()">Copy Text</button>
                     <button class="btn-primary" onclick="downloadFileAsDOCX(${file.id})">Download as DOCX</button>
@@ -6266,6 +6359,12 @@ async function getUserSubscription() {
         async function downloadFileAsDOCX(fileId) {
             const file = generatedFiles.find(f => f.id === fileId);
             if (!file) return;
+
+            // Clean leaked AI commentary from saved resumes before building the DOCX.
+            // Cover letters are never sanitized (they legitimately address the reader).
+            const docContent = file.type === 'resume'
+                ? stripLeakedCommentary(file.content)
+                : file.content;
 
             try {
                 if (typeof JSZip === 'undefined') {
@@ -6337,7 +6436,7 @@ async function getUserSubscription() {
                     const HEADER_SPACING_BEFORE = 120;
                     const JOB_SECTION_SPACING_AFTER = 80;
                     
-                    const lines = file.content.split('\n').filter(l => {
+                    const lines = docContent.split('\n').filter(l => {
                         const t = l.trim();
                         return t && !/^[-*_]{3,}$/.test(t);
                     });
@@ -6454,12 +6553,19 @@ async function getUserSubscription() {
             }
         }
 
-        function showSection(sectionId) {
+        function showSection(sectionId, onShown) {
             // Clear JD synchronously so it's gone before any async auth check resolves
             if (sectionId === 'job-analysis-section') {
                 const textarea = document.getElementById('job-description');
                 if (textarea) textarea.value = '';
                 currentJobDescription = null;
+                // Also clear any stale analysis result so returning to this screen starts clean
+                const analysisResult = document.getElementById('analysis-result');
+                if (analysisResult) {
+                    analysisResult.innerHTML = '';
+                    analysisResult.classList.add('hidden');
+                }
+                currentAnalysis = null;
             }
 
             // Gate feature sections — anonymous users must sign up first
@@ -6472,10 +6578,12 @@ async function getUserSubscription() {
                         return;
                     }
                     _doShowSection(sectionId);
+                    if (typeof onShown === 'function') onShown();
                 });
                 return;
             }
             _doShowSection(sectionId);
+            if (typeof onShown === 'function') onShown();
         }
 
         function _doShowSection(sectionId) {
@@ -8846,8 +8954,11 @@ CRITICAL ANTI-FABRICATION REQUIREMENTS:
    - Use actual tool/system names from the work history
    - Be 1-2 lines maximum
 
-4. FORMAT:
-   - Include: Company Name | Location | Title | Dates (use exact info from work history)
+4. FORMAT — ROLE HEADER (use this EXACT structure for every role, no exceptions):
+   - Line 1: the job title only, in bold. Example: **Senior Operations Program Manager**
+   - Line 2: Company | Location | Dates, separated by pipes, NOT bold. Example: Self Financial | Remote | January 2025 – Present
+   - Always exactly these two lines per role, in this order (title line first, then company/location/dates line). Never put company or dates on the title line. Never place the header on a single combined line. Never italicize the header.
+   - Use exact company, location, title, and dates from the work history. Dates in "Month YYYY – Month YYYY" format (or "Month YYYY – Present").
    - Vary bullet lengths naturally (some 1 line, some 2 lines)
 
 5. BANNED WORDS/PHRASES:
@@ -8861,7 +8972,13 @@ CRITICAL ANTI-FABRICATION REQUIREMENTS:
    - When in doubt about whether something was mentioned, leave it out
    - Truthfulness > Impressiveness
 
-Format your response in markdown. Use ## PROFESSIONAL EXPERIENCE as header. Do not include the word "markdown" in your response.${profileData.backgroundContext ? `\n\nBACKGROUND CONTEXT (candidate-confirmed):\nThe candidate has provided the following context about their experience. It does not appear on their resume but is factually accurate and has been verified by the candidate. Use it to inform this section where relevant — do not fabricate beyond what is stated.\n${profileData.backgroundContext}` : ''}`;
+Format your response in markdown. Use ## PROFESSIONAL EXPERIENCE as header. Do not include the word "markdown" in your response.
+
+CRITICAL — OUTPUT DISCIPLINE:
+- Output ONLY resume content. Never write notes, comments, explanations, or messages to the user.
+- Never remark on whether the work history has "sufficient detail," how many roles it contains, or what is missing. Do not ask the user to provide more information.
+- If a role has limited detail, write the bullets you can support from it and stop. Work with what exists; do not describe what does not.
+- Do not use blockquotes (>) or any "Note:"-style commentary. Your entire response is resume markdown and nothing else.${profileData.backgroundContext ? `\n\nBACKGROUND CONTEXT (candidate-confirmed):\nThe candidate has provided the following context about their experience. It does not appear on their resume but is factually accurate and has been verified by the candidate. Use it to inform this section where relevant — do not fabricate beyond what is stated.\n${profileData.backgroundContext}` : ''}`;
 
 
             const response = await callClaudeAPI(prompt, 'Generate recent experience.');
@@ -8904,8 +9021,11 @@ CRITICAL REQUIREMENTS:
    - Include quantified impact ONLY if the metric actually appears in the work history — never estimate or invent one
    - A bullet that restates the basic function of the job ("Responsible for daily operations", "Performed routine reviews") adds nothing — replace it with a specific detail or omit it
 
-4. FORMAT:
-   - Include: Company Name | Location | Title | Dates (exact from work history)
+4. FORMAT — ROLE HEADER (use this EXACT structure for every role, no exceptions):
+   - Line 1: the job title only, in bold. Example: **Senior Operations Program Manager**
+   - Line 2: Company | Location | Dates, separated by pipes, NOT bold. Example: Self Financial | Remote | January 2025 – Present
+   - Always exactly these two lines per role, in this order (title line first, then company/location/dates line). Never put company or dates on the title line. Never place the header on a single combined line. Never italicize the header.
+   - Use exact company, location, title, and dates from the work history. Dates in "Month YYYY – Month YYYY" format (or "Month YYYY – Present").
    - Use only information explicitly provided
 
 5. BANNED WORDS:
@@ -9054,6 +9174,48 @@ Return ONLY valid JSON:
         }
 
         // Combine sections into final resume
+        /**
+         * Remove AI meta-commentary that occasionally leaks into RESUME output —
+         * notes addressed to the user about the work history being thin, requests
+         * for more detail, blockquote notes, etc. Resume content only; never applied
+         * to cover letters (which legitimately address the reader).
+         *
+         * Line-level and precise: removes only lines matching known leak signatures,
+         * never ordinary resume lines that happen to contain a common word.
+         */
+        function stripLeakedCommentary(text) {
+            if (!text || typeof text !== 'string') return text || '';
+
+            // Signatures observed in leaked notes (case-insensitive). Each targets
+            // AI-to-user phrasing that does not occur in legitimate resume content.
+            const leakSignatures = [
+                /please provide additional/i,
+                /contained sufficient detail/i,
+                /to generate a full experience section/i,
+                /to complete a[\s\S]{0,20}experience section/i,
+                /incorporated into the bullets above/i,
+                /the second entry in the work history/i,
+                /describes a single accomplishment/i,
+                /provide (more|additional) (recent )?role details/i,
+            ];
+
+            const lines = text.split('\n');
+            const kept = lines.filter(line => {
+                const trimmed = line.trim();
+                // Drop blockquote lines (resumes contain no blockquotes)
+                if (trimmed.startsWith('>')) return false;
+                // Drop a "Note:"-prefixed line only when it carries leak phrasing
+                const isNotePrefixed = /^\**\s*note\s*:/i.test(trimmed);
+                const hasLeakPhrase = leakSignatures.some(re => re.test(trimmed));
+                if (hasLeakPhrase) return false;
+                if (isNotePrefixed && /provide|detail|work history|experience section|additional/i.test(trimmed)) return false;
+                return true;
+            });
+
+            // Collapse any 3+ blank runs left behind, trim edges
+            return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        }
+
         function combineResumeSections(summary, recentExp, olderExp, projects, education) {
             let resume = '';
             if (summary) resume += summary + '\n\n';
@@ -9061,7 +9223,7 @@ Return ONLY valid JSON:
             if (olderExp) resume += olderExp + '\n\n';
             if (projects) resume += projects + '\n\n';
             if (education) resume += education;
-            return resume.trim();
+            return stripLeakedCommentary(resume.trim());
         }
 
         // Main chunked generation function
@@ -9197,7 +9359,7 @@ Return ONLY valid JSON:
                 resultsContent.innerHTML = `
                     <h3>Your Tailored Resume</h3>
                     ${displayATSBadge(atsAnalysis)}
-                    <div class="document-output">${sanitizeHtml(fullResume)}</div>
+                    <div class="document-output">${renderMarkdown(fullResume)}</div>
                     <div class="button-group" style="margin-top: 24px;">
                         <button class="btn-secondary" onclick="copyCurrentResume()">Copy Text</button>
                         <button class="btn-primary" onclick="downloadResumeAsDOCX(event)">Download as DOCX</button>
@@ -9415,7 +9577,7 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
                 
                 resultsContent.innerHTML = `
                     <h3>Your Cover Letter</h3>
-                    <div class="document-output">${sanitizeHtml(coverLetter)}</div>
+                    <div class="document-output">${renderMarkdown(coverLetter)}</div>
                     <div class="button-group" style="margin-top: 24px;">
                         <button class="btn-secondary" onclick="copyCurrentCoverLetter()">Copy Text</button>
                         <button class="btn-primary" onclick="downloadCoverLetterAsDOCX()">Download as DOCX</button>

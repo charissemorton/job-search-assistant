@@ -843,6 +843,121 @@
             animation: fadeSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* ===== Find a Role (MatchMentum × Lorikeet) ===== */
+        .lk-banner {
+            background: linear-gradient(135deg, #0a0f1e 0%, #141c30 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 32px 36px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .lk-banner::after {
+            content: "";
+            position: absolute;
+            top: -60px; right: -40px;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(217,70,160,0.14), transparent 70%);
+            pointer-events: none;
+        }
+        .lk-banner-brands { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .lk-brand-mm, .lk-brand-lk { font-family: 'Instrument Serif', serif; font-size: 22px; color: #fff; letter-spacing: -0.2px; }
+        .lk-brand-x { color: rgba(255,255,255,0.35); font-size: 18px; }
+        .lk-brand-mark { flex-shrink: 0; }
+        .lk-banner-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #F59E0B; margin-bottom: 10px; }
+        .lk-banner-title { font-family: 'Instrument Serif', serif; font-size: 30px; font-weight: 400; color: #fff; line-height: 1.2; margin: 0 0 10px; max-width: 600px; letter-spacing: -0.3px; }
+        .lk-banner-copy { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 560px; margin: 0; }
+
+        .lk-filters {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .lk-board-count { font-size: 13px; font-weight: 600; color: #93c5fd; margin-bottom: 18px; letter-spacing: 0.2px; }
+        .lk-filter-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+        .lk-field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
+        .lk-field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #64748b; }
+        .lk-select {
+            padding: 10px 12px; border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.12);
+            background: #0f172a; color: #e2e8f0;
+            font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer;
+        }
+        .lk-select:focus { outline: 2px solid #2563eb; border-color: transparent; }
+        .lk-filter-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .lk-keyword {
+            flex: 1; min-width: 220px;
+            padding: 11px 14px; border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.12);
+            background: #0f172a; color: #e2e8f0;
+            font-size: 14px; font-family: 'DM Sans', sans-serif;
+        }
+        .lk-keyword:focus { outline: 2px solid #2563eb; border-color: transparent; }
+
+        .lk-results-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; margin-bottom: 12px; }
+        .lk-results { display: flex; flex-direction: column; gap: 10px; }
+        .lk-empty { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); border-radius: 14px; padding: 36px; text-align: center; color: #94a3b8; }
+
+        .lk-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 18px 22px;
+            display: flex; align-items: center; gap: 18px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .lk-card:hover { border-color: rgba(37,99,235,0.5); background: rgba(37,99,235,0.06); }
+        .lk-card:focus-visible { outline: 2px solid #2563eb; }
+        .lk-card-main { flex: 1; min-width: 0; }
+        .lk-card-title { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 3px; }
+        .lk-card-sub { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+        .lk-card-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .lk-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .lk-pill-blue { background: rgba(37,99,235,0.15); color: #93c5fd; }
+        .lk-pill-slate { background: rgba(255,255,255,0.06); color: #cbd5e1; }
+        .lk-pill-green { background: rgba(34,197,94,0.15); color: #86efac; }
+        .lk-card-cta { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: #60a5fa; }
+
+        .lk-disclaimer { font-size: 12px; color: #64748b; line-height: 1.6; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); max-width: 760px; }
+
+        /* Detail modal */
+        .lk-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(5,8,16,0.7);
+            display: none; align-items: center; justify-content: center;
+            padding: 20px; z-index: 1000;
+        }
+        .lk-modal-overlay.open { display: flex; }
+        .lk-modal {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            max-width: 620px; width: 100%;
+            max-height: 85vh; overflow-y: auto;
+            padding: 32px; position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+        .lk-modal-close { position: absolute; top: 16px; right: 18px; background: none; border: none; color: #94a3b8; font-size: 26px; line-height: 1; cursor: pointer; padding: 0; }
+        .lk-modal-close:hover { color: #fff; }
+        .lk-detail-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: #fff; line-height: 1.2; margin-bottom: 6px; padding-right: 30px; }
+        .lk-detail-sub { font-size: 14px; color: #94a3b8; }
+        .lk-detail-desc { font-size: 14px; line-height: 1.7; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; max-height: 340px; overflow-y: auto; }
+        .lk-detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 22px; padding-top: 20px; }
+        .lk-link { color: #60a5fa; font-size: 13.5px; font-weight: 600; text-decoration: none; }
+        .lk-link:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            .lk-banner { padding: 24px 20px; }
+            .lk-banner-title { font-size: 24px; }
+            .lk-field { min-width: 100%; }
+        }
+
+
         .section.active {
             display: block;
         }
@@ -3306,6 +3421,14 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" 
+                           onclick="showSection('find-role-section')" 
+                           aria-label="Find a Role - Search the CX + AI job board">
+                            <i data-lucide="briefcase" class="nav-icon" aria-hidden="true"></i>
+                            <span>Find a Role</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" 
                            onclick="showGeneratedFiles()" 
                            aria-label="View History - Browse your saved documents">
                             <i data-lucide="database" class="nav-icon" aria-hidden="true"></i>
@@ -3637,6 +3760,110 @@
                 </div>
                 
                 <div id="results-content" role="region" aria-live="polite" aria-atomic="true"></div>
+            </div>
+
+            <!-- Find a Role Section (MatchMentum × Lorikeet) -->
+            <div id="find-role-section" class="section">
+                <div class="nav-buttons">
+                    <button class="btn-secondary" onclick="showSection('welcome-section')">← Back to Home</button>
+                    <button class="btn-secondary" onclick="showSection('job-analysis-section')">🎯 Analyze a Job</button>
+                </div>
+
+                <!-- Co-branded banner -->
+                <div class="lk-banner">
+                    <div class="lk-banner-brands">
+                        <span class="lk-brand-mm">MatchMentum</span>
+                        <span class="lk-brand-x">×</span>
+                        <svg class="lk-brand-mark" viewBox="0 0 64 64" width="24" height="24" fill="none" aria-hidden="true">
+                            <path d="M14 46 C14 30 22 16 30 12 C28 24 26 38 22 48 Z" fill="#F59E0B"/>
+                            <path d="M20 48 C22 32 30 20 38 16 C34 30 30 42 26 50 Z" fill="#EF4444"/>
+                            <path d="M26 50 C30 36 38 26 46 22 C40 36 34 46 30 52 Z" fill="#D946A0"/>
+                            <path d="M14 46 C22 50 34 52 46 50 C36 56 22 56 14 52 Z" fill="#2563EB"/>
+                        </svg>
+                        <span class="lk-brand-lk">Lorikeet</span>
+                    </div>
+                    <div class="lk-banner-eyebrow">CX + AI Job Board</div>
+                    <h2 class="lk-banner-title">Search Lorikeet's board. Tailor your resume to the role.</h2>
+                    <p class="lk-banner-copy">MatchMentum connects you to Lorikeet's board of customer-experience roles built around AI. Search for a position, then tailor your resume to the job you pick — in one step.</p>
+                </div>
+
+                <!-- Filters -->
+                <div class="lk-filters">
+                    <div class="lk-board-count" id="lk-board-count">Search the CX + AI roles on the board</div>
+                    <div class="lk-filter-row">
+                        <label class="lk-field">
+                            <span class="lk-field-label">Pillar</span>
+                            <select id="lk-pillar" class="lk-select">
+                                <option value="">Any pillar</option>
+                                <option value="Support">Support</option>
+                                <option value="Retention">Retention</option>
+                                <option value="Growth">Growth</option>
+                                <option value="Operations">Operations</option>
+                                <option value="Success">Success</option>
+                                <option value="Trust &amp; Safety">Trust &amp; Safety</option>
+                                <option value="Insights">Insights</option>
+                            </select>
+                        </label>
+                        <label class="lk-field">
+                            <span class="lk-field-label">Seniority</span>
+                            <select id="lk-seniority" class="lk-select">
+                                <option value="">Any level</option>
+                                <option value="junior">Junior</option>
+                                <option value="mid">Mid</option>
+                                <option value="senior">Senior</option>
+                                <option value="lead">Lead</option>
+                                <option value="director">Director</option>
+                            </select>
+                        </label>
+                        <label class="lk-field">
+                            <span class="lk-field-label">Country</span>
+                            <select id="lk-country" class="lk-select">
+                                <option value="">Any country</option>
+                                <option value="United States">United States</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="Canada">Canada</option>
+                                <option value="Spain">Spain</option>
+                                <option value="Mexico">Mexico</option>
+                                <option value="Australia">Australia</option>
+                                <option value="France">France</option>
+                                <option value="Germany">Germany</option>
+                                <option value="India">India</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
+                        <label class="lk-field">
+                            <span class="lk-field-label">Work arrangement</span>
+                            <select id="lk-arrangement" class="lk-select">
+                                <option value="">Any arrangement</option>
+                                <option value="Remote">Remote</option>
+                                <option value="On-site">On-site</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="lk-filter-actions">
+                        <input id="lk-keyword" class="lk-keyword" type="text" placeholder="Keyword (optional) — e.g. fintech, Zendesk" aria-label="Keyword search" autocomplete="off">
+                        <button class="btn-primary" onclick="lkRunSearch()">Search roles</button>
+                        <button class="btn-secondary" onclick="lkClearFilters()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="lk-results-label" id="lk-results-label"></div>
+                <div class="lk-results" id="lk-results"></div>
+
+                <!-- Disclaimer -->
+                <p class="lk-disclaimer">
+                    Lorikeet and the Lorikeet logo are trademarks of their respective owner. Lorikeet is not affiliated with, and does not endorse or sponsor, MatchMentum. Job listings are provided by Lorikeet's CX + AI job board; MatchMentum does not control or guarantee their accuracy or availability. Powered by Lorikeet.
+                </p>
+            </div>
+
+            <!-- Find a Role: job detail modal -->
+            <div id="lk-detail-modal" class="lk-modal-overlay">
+                <div class="lk-modal">
+                    <button class="lk-modal-close" onclick="lkCloseDetail()" aria-label="Close">×</button>
+                    <div id="lk-detail-body"></div>
+                </div>
             </div>
 
             <!-- Generated Files Section -->
@@ -6569,7 +6796,7 @@ async function getUserSubscription() {
             }
 
             // Gate feature sections — anonymous users must sign up first
-            const gatedSections = ['setup-section', 'review-section', 'job-analysis-section', 'generated-files-section', 'about-section'];
+            const gatedSections = ['setup-section', 'review-section', 'job-analysis-section', 'generated-files-section', 'about-section', 'find-role-section'];
             if (gatedSections.includes(sectionId)) {
                 const supabase = getSupabase();
                 supabase.auth.getUser().then(({ data: { user } }) => {
@@ -6608,6 +6835,11 @@ async function getUserSubscription() {
             // Populate review section if navigating there
             if (sectionId === 'review-section' && profileData) {
                 displayProfileForReview();
+            }
+
+            // Load the CX + AI job board when opening Find a Role
+            if (sectionId === 'find-role-section') {
+                initFindARole();
             }
 
             // Scroll to top
@@ -8128,6 +8360,222 @@ Return ONLY the JSON.`;
             }
             return String(experience);
         }
+
+        // ============================================================
+        // FIND A ROLE — MatchMentum × Lorikeet CX + AI job board
+        // Frontend calls YOUR backend function (job-search), never Lorikeet directly.
+        // Until the backend function is deployed, USE_SAMPLE_DATA=true serves the
+        // real-shape sample data captured from the board so the UI is fully clickable.
+        // ============================================================
+
+        // Backend function endpoint (staging). Swap when the real function is live.
+        // Mirrors how the production Netlify proxy URL is hardcoded elsewhere.
+        const JOB_SEARCH_FN_URL = 'https://curious-rugelach-e5ffb8.netlify.app/.netlify/functions/job-search';
+        const USE_SAMPLE_DATA = true; // flip to false once the backend function is deployed
+
+        // Fixed filter option sets — mirror the real search_jobs enums.
+        const LK_PILLARS = ['Support', 'Retention', 'Growth', 'Operations', 'Success', 'Trust & Safety', 'Insights'];
+        const LK_SENIORITY = ['junior', 'mid', 'senior', 'lead', 'director'];
+        const LK_COUNTRIES = ['United States', 'United Kingdom', 'Canada', 'Spain', 'Mexico', 'Australia', 'France', 'Germany', 'India', 'Other'];
+        const LK_ARRANGEMENTS = ['Remote', 'On-site', 'Hybrid'];
+
+        // Board stats (real numbers from get_stats). In production these come from the
+        // backend so the count stays live; sample values used as fallback.
+        let lkStats = { totalJobs: 593, totalCompanies: 455 };
+
+        // Sample data — real shape captured from the live board.
+        const LK_SAMPLE_FEATURED = [
+            { id: 'jlKiF2KMK', slug: 'sr-cx-programs-automation-manager-betterment', title: 'Sr. CX Programs & Automation Manager', company: 'Betterment', location: 'New York, NY', country: 'United States', arrangement: 'Hybrid', pillar: 'Support', seniority: 'lead', summary: 'Own net-new AI initiatives across customer support and operations — from business case to launch.', applyUrl: 'https://www.linkedin.com/jobs/view/4404108583', description: 'About the Role\nAs our Sr. CX Programs & Automation Manager, you\'ll own the full lifecycle of net-new AI initiatives across customer support and operations: from identifying the opportunity, building the business case, and driving implementation, through to launch and handoff.\n\nWhat We\'re Looking For\n7–10+ years in CX operations, support product management, or technical program management. Hands-on experience launching AI or automation in support environments — Zendesk AI, Intercom Fin, Decagon, or similar.' },
+            { id: 'LbJEIRDW4', slug: 'senior-manager-cx-operations-clickup', title: 'Senior Manager, CX Operations', company: 'ClickUp', location: 'Remote', country: 'Other', arrangement: 'Remote', pillar: 'Operations', seniority: 'lead', summary: 'Lead CX operations strategy and drive scalable, AI-powered customer experience at ClickUp.', applyUrl: 'https://www.linkedin.com/jobs/view/4402741384', description: 'We\'re looking for a Senior Manager, CX Operations to join our team as the trusted business partner to our global Head of Support and CX.\n\nAbout You\n8+ years in an Operations and/or Strategy role focused on Customer Support, Experience, or Success. Track record of leading technology-enabled business process transformations with strategic application of AI and automation tools.' },
+            { id: 'aa1', slug: 'customer-support-lead-monzo', title: 'Customer Support Lead, AI Tooling', company: 'Monzo', location: 'London, England, UK', country: 'United Kingdom', arrangement: 'Hybrid', pillar: 'Support', seniority: 'senior', summary: 'Shape the AI-assisted support experience for millions of customers in a regulated fintech.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000001', description: 'About the Role\nShape how AI assists our support team across chat, email, and in-app messaging. You\'ll own the tooling roadmap and work closely with engineering to ship agent-copilot features.\n\nWhat We\'re Looking For\n5+ years in customer support or CX, with at least 2 leading a team.' },
+            { id: 'aa2', slug: 'cx-insights-analyst-shopify', title: 'CX Insights Analyst', company: 'Shopify', location: 'Toronto, Ontario, Canada', country: 'Canada', arrangement: 'Remote', pillar: 'Insights', seniority: 'mid', summary: 'Turn support conversation data into product and staffing decisions across a global CX org.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000002', description: 'About the Role\nTurn millions of support interactions into decisions. You\'ll build dashboards, surface trends, and partner with product to close the loop on customer pain points.\n\nWhat We\'re Looking For\n3+ years in analytics, ideally in a support or CX context. Fluent in SQL.' },
+            { id: 'aa3', slug: 'retention-ops-manager-factorial', title: 'Retention Operations Manager', company: 'Factorial', location: 'Barcelona, Catalonia, Spain', country: 'Spain', arrangement: 'On-site', pillar: 'Retention', seniority: 'mid', summary: 'Build and run retention playbooks powered by automation for a fast-scaling SaaS.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000003', description: 'About the Role\nBuild and run retention playbooks powered by automation.\n\nWhat We\'re Looking For\n4+ years in retention, lifecycle, or CX operations. Comfortable with automation tooling.' },
+            { id: 'aa4', slug: 'head-customer-success-deel', title: 'Head of Customer Success', company: 'Deel', location: 'Remote (US)', country: 'United States', arrangement: 'Remote', pillar: 'Success', seniority: 'director', summary: 'Own the post-sale journey and scale a success function with AI-driven health scoring.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000004', description: 'About the Role\nOwn the post-sale journey and scale a success function with AI-driven health scoring.\n\nWhat We\'re Looking For\n10+ years in customer success, with 5+ leading teams at a high-growth SaaS.' }
+        ];
+
+        // Current results in view (featured on landing, or search results).
+        let lkCurrentResults = [];
+        let lkShowingFeatured = true;
+
+        // ---- Data layer: calls YOUR backend function (or sample fallback) ----
+
+        async function lkCallBackend(action, params) {
+            if (USE_SAMPLE_DATA) {
+                return lkSampleResponse(action, params);
+            }
+            const res = await fetch(JOB_SEARCH_FN_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...params })
+            });
+            if (!res.ok) throw new Error('Job board request failed: ' + res.status);
+            return res.json();
+        }
+
+        function lkSampleResponse(action, params) {
+            // Simulate the backend contract against sample data.
+            if (action === 'stats') return Promise.resolve({ stats: lkStats });
+            if (action === 'featured') return Promise.resolve({ jobs: LK_SAMPLE_FEATURED });
+            if (action === 'search') {
+                const p = params || {};
+                const filtered = LK_SAMPLE_FEATURED.filter(j => {
+                    if (p.pillar && j.pillar !== p.pillar) return false;
+                    if (p.seniority && j.seniority !== p.seniority) return false;
+                    if (p.country && j.country !== p.country) return false;
+                    if (p.arrangement && j.arrangement !== p.arrangement) return false;
+                    if (p.query) {
+                        const hay = (j.title + ' ' + j.company + ' ' + j.summary).toLowerCase();
+                        if (!hay.includes(p.query.toLowerCase())) return false;
+                    }
+                    return true;
+                });
+                return Promise.resolve({ jobs: filtered });
+            }
+            if (action === 'job') {
+                const job = LK_SAMPLE_FEATURED.find(j => j.slug === params.slug);
+                return Promise.resolve({ job: job || null });
+            }
+            return Promise.resolve({});
+        }
+
+        // ---- Escaping helper (reuse app-wide escapeHtml if present) ----
+        function lkEsc(s) {
+            return (typeof escapeHtml === 'function') ? escapeHtml(s || '') : String(s || '');
+        }
+
+        // ---- Section entry: load stats + featured on open ----
+        async function initFindARole() {
+            const countEl = document.getElementById('lk-board-count');
+            const listEl = document.getElementById('lk-results');
+            if (listEl) listEl.innerHTML = '<div class="lk-empty">Loading featured roles…</div>';
+            try {
+                const [statsRes, featRes] = await Promise.all([
+                    lkCallBackend('stats', {}),
+                    lkCallBackend('featured', {})
+                ]);
+                if (statsRes && statsRes.stats) lkStats = statsRes.stats;
+                if (countEl) {
+                    countEl.textContent = 'Search ' + lkStats.totalJobs.toLocaleString() +
+                        ' CX + AI roles across ' + lkStats.totalCompanies.toLocaleString() + ' companies';
+                }
+                lkCurrentResults = (featRes && featRes.jobs) ? featRes.jobs : [];
+                lkShowingFeatured = true;
+                lkRenderResults();
+            } catch (e) {
+                if (listEl) listEl.innerHTML = '<div class="lk-empty">Couldn\'t load the job board right now. Try again in a moment.</div>';
+            }
+        }
+
+        // ---- Run a filtered search ----
+        async function lkRunSearch() {
+            const params = {
+                query: (document.getElementById('lk-keyword') || {}).value || '',
+                pillar: (document.getElementById('lk-pillar') || {}).value || '',
+                seniority: (document.getElementById('lk-seniority') || {}).value || '',
+                country: (document.getElementById('lk-country') || {}).value || '',
+                arrangement: (document.getElementById('lk-arrangement') || {}).value || ''
+            };
+            const listEl = document.getElementById('lk-results');
+            if (listEl) listEl.innerHTML = '<div class="lk-empty">Searching…</div>';
+            try {
+                const res = await lkCallBackend('search', params);
+                lkCurrentResults = (res && res.jobs) ? res.jobs : [];
+                lkShowingFeatured = false;
+                lkRenderResults();
+            } catch (e) {
+                if (listEl) listEl.innerHTML = '<div class="lk-empty">Search failed. Try again in a moment.</div>';
+            }
+        }
+
+        function lkClearFilters() {
+            ['lk-keyword', 'lk-pillar', 'lk-seniority', 'lk-country', 'lk-arrangement'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Snap back to featured
+            initFindARole();
+        }
+
+        // ---- Render the results list ----
+        function lkRenderResults() {
+            const listEl = document.getElementById('lk-results');
+            const labelEl = document.getElementById('lk-results-label');
+            if (!listEl) return;
+
+            if (labelEl) {
+                labelEl.textContent = lkShowingFeatured
+                    ? 'Featured roles — ' + lkCurrentResults.length + ' of ' + lkStats.totalJobs.toLocaleString() + ' on the board'
+                    : lkCurrentResults.length + (lkCurrentResults.length === 1 ? ' role' : ' roles');
+            }
+
+            if (!lkCurrentResults.length) {
+                listEl.innerHTML = '<div class="lk-empty">No roles match these filters. Try widening your search.</div>';
+                return;
+            }
+
+            listEl.innerHTML = lkCurrentResults.map((j, i) => `
+                <div class="lk-card" onclick="lkOpenDetail(${i})" role="button" tabindex="0"
+                     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lkOpenDetail(${i});}">
+                    <div class="lk-card-main">
+                        <div class="lk-card-title">${lkEsc(j.title)}</div>
+                        <div class="lk-card-sub">${lkEsc(j.company)} · ${lkEsc(j.location)}</div>
+                        <div class="lk-card-pills">
+                            <span class="lk-pill lk-pill-blue">${lkEsc(j.pillar)}</span>
+                            <span class="lk-pill lk-pill-slate">${lkEsc(j.seniority.charAt(0).toUpperCase() + j.seniority.slice(1))}</span>
+                            <span class="lk-pill ${j.arrangement === 'Remote' ? 'lk-pill-green' : 'lk-pill-slate'}">${lkEsc(j.arrangement)}</span>
+                        </div>
+                    </div>
+                    <span class="lk-card-cta">View →</span>
+                </div>
+            `).join('');
+        }
+
+        // ---- Detail view (full posting) ----
+        function lkOpenDetail(index) {
+            const j = lkCurrentResults[index];
+            if (!j) return;
+            const modal = document.getElementById('lk-detail-modal');
+            const body = document.getElementById('lk-detail-body');
+            if (!modal || !body) return;
+
+            body.innerHTML = `
+                <div class="lk-detail-title">${lkEsc(j.title)}</div>
+                <div class="lk-detail-sub">${lkEsc(j.company)} · ${lkEsc(j.location)}</div>
+                <div class="lk-card-pills" style="margin:14px 0 20px;">
+                    <span class="lk-pill lk-pill-blue">${lkEsc(j.pillar)}</span>
+                    <span class="lk-pill lk-pill-slate">${lkEsc(j.seniority.charAt(0).toUpperCase() + j.seniority.slice(1))}</span>
+                    <span class="lk-pill ${j.arrangement === 'Remote' ? 'lk-pill-green' : 'lk-pill-slate'}">${lkEsc(j.arrangement)}</span>
+                </div>
+                <div class="lk-detail-desc">${lkEsc(j.description).replace(/\n/g, '<br>')}</div>
+                <div class="lk-detail-actions">
+                    <a href="${lkEsc(j.applyUrl)}" target="_blank" rel="noopener noreferrer" class="lk-link">View original posting →</a>
+                    <button class="btn-primary" onclick="lkTailorToJob(${index})">Tailor my resume →</button>
+                </div>
+            `;
+            modal.classList.add('open');
+        }
+
+        function lkCloseDetail() {
+            const modal = document.getElementById('lk-detail-modal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        // ---- Hand-off into the existing analyze flow ----
+        // Strips the description to text, drops it into #job-description, and runs
+        // analyzeJob() via the showSection onShown callback (same proven pattern as
+        // handleWelcomeAnalyze).
+        function lkTailorToJob(index) {
+            const j = lkCurrentResults[index];
+            if (!j) return;
+            lkCloseDetail();
+            const jd = (j.description || '').replace(/<[^>]+>/g, '').trim();
+            showSection('job-analysis-section', () => {
+                const jobInput = document.getElementById('job-description');
+                if (jobInput) jobInput.value = jd;
+                analyzeJob();
+            });
+        }
+
 
         async function analyzeJob() {
             const jobDesc = document.getElementById('job-description').value.trim();

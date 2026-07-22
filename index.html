@@ -4701,10 +4701,15 @@ async function getUserSubscription() {
         function handleWelcomeAnalyze() {
             const input = document.getElementById('welcomeJobInput');
             if (!input || !input.value.trim()) return;
-            // Pre-fill the job analysis textarea and navigate
-            const jobInput = document.getElementById('job-description');
-            if (jobInput) jobInput.value = input.value.trim();
-            showSection('job-analysis-section');
+            const jd = input.value.trim();
+            // Navigate first (showSection clears the textarea), then repopulate and
+            // analyze via the onShown callback — fires only after the section is
+            // actually shown, and never if an anonymous user is bounced to signup.
+            showSection('job-analysis-section', () => {
+                const jobInput = document.getElementById('job-description');
+                if (jobInput) jobInput.value = jd;
+                analyzeJob();
+            });
         }
 
         /**
@@ -6548,12 +6553,19 @@ async function getUserSubscription() {
             }
         }
 
-        function showSection(sectionId) {
+        function showSection(sectionId, onShown) {
             // Clear JD synchronously so it's gone before any async auth check resolves
             if (sectionId === 'job-analysis-section') {
                 const textarea = document.getElementById('job-description');
                 if (textarea) textarea.value = '';
                 currentJobDescription = null;
+                // Also clear any stale analysis result so returning to this screen starts clean
+                const analysisResult = document.getElementById('analysis-result');
+                if (analysisResult) {
+                    analysisResult.innerHTML = '';
+                    analysisResult.classList.add('hidden');
+                }
+                currentAnalysis = null;
             }
 
             // Gate feature sections — anonymous users must sign up first
@@ -6566,10 +6578,12 @@ async function getUserSubscription() {
                         return;
                     }
                     _doShowSection(sectionId);
+                    if (typeof onShown === 'function') onShown();
                 });
                 return;
             }
             _doShowSection(sectionId);
+            if (typeof onShown === 'function') onShown();
         }
 
         function _doShowSection(sectionId) {

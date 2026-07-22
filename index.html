@@ -5502,7 +5502,85 @@ async function getUserSubscription() {
             
             return temp.innerHTML;
         }
-        
+
+        /**
+         * Render generated document Markdown to safe HTML for on-screen preview.
+         * Scope matches what the generation prompts emit and what the DOCX builders
+         * parse: #{1,6} headers, **bold** (inline + whole-line), -/• bullets, and
+         * paragraph/line breaks. No tables, links, images, or code — none are produced.
+         *
+         * XSS-safe: every piece of source text is escaped via escapeHtml BEFORE any
+         * formatting markers are interpreted. The markers (** # -) are ASCII and pass
+         * through escapeHtml unchanged, so we can safely match them post-escape.
+         * Replaces sanitizeHtml at the three document-output preview surfaces.
+         */
+        function renderMarkdown(text) {
+            if (text === null || text === undefined) return '';
+            if (typeof text !== 'string') text = String(text);
+
+            // Convert already-escaped inline **bold** → <strong>. Operates on escaped
+            // text, so the ** literals are intact and there is no injection surface.
+            const inlineBold = (escaped) =>
+                escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            const lines = text.split('\n');
+            const html = [];
+            let inList = false;
+
+            const closeList = () => {
+                if (inList) { html.push('</ul>'); inList = false; }
+            };
+
+            for (let raw of lines) {
+                const trimmed = raw.trim();
+
+                // Blank line → paragraph spacing (close any open list first)
+                if (trimmed === '') {
+                    closeList();
+                    html.push('<div style="height:10px"></div>');
+                    continue;
+                }
+
+                // Horizontal-rule style separators (---, ***, ___) → skip, as DOCX does
+                if (/^[-*_]{3,}$/.test(trimmed)) {
+                    closeList();
+                    continue;
+                }
+
+                // Header: #{1,6} + space
+                const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+                if (headerMatch) {
+                    closeList();
+                    const content = inlineBold(escapeHtml(headerMatch[2]));
+                    html.push('<div style="font-weight:700;color:#0f172a;font-size:15px;margin:14px 0 6px;">' + content + '</div>');
+                    continue;
+                }
+
+                // Whole-line bold (**Title**) treated as a sub-header
+                if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
+                    closeList();
+                    const inner = trimmed.slice(2, -2);
+                    html.push('<div style="font-weight:700;color:#0f172a;margin:8px 0 4px;">' + escapeHtml(inner) + '</div>');
+                    continue;
+                }
+
+                // Bullet: -, •, or * followed by space
+                const bulletMatch = trimmed.match(/^[-•*]\s+(.+)$/);
+                if (bulletMatch) {
+                    if (!inList) { html.push('<ul style="margin:4px 0 4px 0;padding-left:20px;">'); inList = true; }
+                    html.push('<li style="margin-bottom:4px;">' + inlineBold(escapeHtml(bulletMatch[1])) + '</li>');
+                    continue;
+                }
+
+                // Plain line
+                closeList();
+                html.push('<div style="margin-bottom:2px;">' + inlineBold(escapeHtml(trimmed)) + '</div>');
+            }
+            closeList();
+
+            return html.join('');
+        }
+
         /**
          * Validate profile data structure to prevent XSS from tampered localStorage
          */
@@ -6220,7 +6298,7 @@ async function getUserSubscription() {
             const resultsContent = document.getElementById('results-content');
             resultsContent.innerHTML = `
                 <h3>${file.type === 'resume' ? 'Resume' : 'Cover Letter'} - ${escapeHtml(file.jobTitle)}</h3>
-                <div class="document-output">${sanitizeHtml(file.content)}</div>
+                <div class="document-output">${renderMarkdown(file.content)}</div>
                 <div class="button-group" style="margin-top: 24px;">
                     <button class="btn-secondary" onclick="copyCurrentViewedFile()">Copy Text</button>
                     <button class="btn-primary" onclick="downloadFileAsDOCX(${file.id})">Download as DOCX</button>
@@ -9197,7 +9275,7 @@ Return ONLY valid JSON:
                 resultsContent.innerHTML = `
                     <h3>Your Tailored Resume</h3>
                     ${displayATSBadge(atsAnalysis)}
-                    <div class="document-output">${sanitizeHtml(fullResume)}</div>
+                    <div class="document-output">${renderMarkdown(fullResume)}</div>
                     <div class="button-group" style="margin-top: 24px;">
                         <button class="btn-secondary" onclick="copyCurrentResume()">Copy Text</button>
                         <button class="btn-primary" onclick="downloadResumeAsDOCX(event)">Download as DOCX</button>
@@ -9415,7 +9493,7 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
                 
                 resultsContent.innerHTML = `
                     <h3>Your Cover Letter</h3>
-                    <div class="document-output">${sanitizeHtml(coverLetter)}</div>
+                    <div class="document-output">${renderMarkdown(coverLetter)}</div>
                     <div class="button-group" style="margin-top: 24px;">
                         <button class="btn-secondary" onclick="copyCurrentCoverLetter()">Copy Text</button>
                         <button class="btn-primary" onclick="downloadCoverLetterAsDOCX()">Download as DOCX</button>

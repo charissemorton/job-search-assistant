@@ -7322,7 +7322,12 @@ Return ONLY the JSON.`;
             const newRoles = incRoles.filter(r => !exRoles.some(e => _fuzzyMatch(_headerKey(e), _headerKey(r), 0.7)));
             if (newRoles.length) {
                 const base = experienceToText(updated.experience || '');
-                updated.experience = base ? base + '\n\n' + newRoles.join('\n\n') : newRoles.join('\n\n');
+                const mergedText = base ? base + '\n\n' + newRoles.join('\n\n') : newRoles.join('\n\n');
+                // Re-parse back into the structured array shape before returning —
+                // experienceToText() above flattens to plain text for diffing, but
+                // profileData.experience must always be saved as an array of
+                // {title, company, startDate, endDate, description} objects, not text.
+                updated.experience = parseExperienceText(mergedText);
             }
 
             // Skills not in existing
@@ -8344,30 +8349,66 @@ Return ONLY the JSON.`;
             return text.trim();
         }
 
-        // Convert experience textarea text → structured experience array
-        // Inverse of experienceToText()
+        // Try to read a block's first line as a role header. Returns
+        // {title, company, startDate, endDate} or null if it isn't one.
+        function _matchExperienceHeader(header) {
+            // "Title | Company | Location | Dates" (parseResumeText's AI output
+            // format — see its system prompt). Location is optional (3 or 4 pipe
+            // segments); the last segment is always the dates.
+            const pipeParts = header.split(/\s*\|\s*/).map(p => p.trim()).filter(Boolean);
+            if (pipeParts.length >= 3) {
+                const datesPart = pipeParts[pipeParts.length - 1];
+                const dateMatch = datesPart.match(/^(.+?)\s*[–\-]\s*(.+)$/);
+                return {
+                    title: pipeParts[0],
+                    company: pipeParts[1],
+                    startDate: dateMatch ? dateMatch[1].trim() : datesPart,
+                    endDate: dateMatch ? dateMatch[2].trim() : ''
+                };
+            }
+            // "Title at Company startDate – endDate" (experienceToText output format)
+            const atMatch = header.match(/^(.+?)\s+at\s+(.+?)(?:\s+(.+?)\s+[–\-]\s+(.+?))?$/);
+            if (atMatch) {
+                return {
+                    title: atMatch[1].trim(),
+                    company: atMatch[2].trim(),
+                    startDate: atMatch[3]?.trim() || '',
+                    endDate: atMatch[4]?.trim() || ''
+                };
+            }
+            return null;
+        }
+
+        // Convert experience textarea text → structured experience array.
+        // Inverse of experienceToText(). Splits on blank lines into candidate
+        // blocks, but only blocks whose first line matches a role header start
+        // a new role — any block without a header (e.g. a narrative paragraph
+        // separated from its role's bullets by a blank line) is folded into the
+        // description of the role above it, instead of becoming its own
+        // blank-title/company entry.
         function parseExperienceText(text) {
             if (!text) return [];
             if (Array.isArray(text)) return text;
             const blocks = text.split(/\n\n+/).map(b => b.trim()).filter(b => b.length > 0);
-            return blocks.map(block => {
+            const roles = [];
+            for (const block of blocks) {
                 const lines = block.split('\n');
                 const header = lines[0] || '';
-                const description = lines.slice(1).join('\n').trim();
-                // Match "Title at Company startDate – endDate" (experienceToText output format)
-                const atMatch = header.match(/^(.+?)\s+at\s+(.+?)(?:\s+(.+?)\s+[–\-]\s+(.+?))?$/);
-                if (atMatch) {
-                    return {
-                        title: atMatch[1].trim(),
-                        company: atMatch[2].trim(),
-                        startDate: atMatch[3]?.trim() || '',
-                        endDate: atMatch[4]?.trim() || '',
-                        description
-                    };
+                const rest = lines.slice(1).join('\n').trim();
+                const match = _matchExperienceHeader(header);
+                if (match) {
+                    roles.push({ ...match, description: rest });
+                } else if (roles.length) {
+                    // No header on this block — it's a continuation of the
+                    // previous role's description, not a new role.
+                    const prev = roles[roles.length - 1];
+                    prev.description = prev.description ? prev.description + '\n\n' + block : block;
+                } else {
+                    // No preceding role to attach to — keep it, unparsed.
+                    roles.push({ title: '', company: '', startDate: '', endDate: '', description: block });
                 }
-                // Fallback: no structured header parsed
-                return { title: '', company: '', startDate: '', endDate: '', description: block };
-            });
+            }
+            return roles;
         }
 
         function experienceToText(experience) {

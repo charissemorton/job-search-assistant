@@ -8359,14 +8359,15 @@ Return ONLY the JSON.`;
         // ============================================================
         // FIND A ROLE — MatchMentum × Lorikeet CX + AI job board
         // Frontend calls YOUR backend function (job-search), never Lorikeet directly.
-        // Until the backend function is deployed, USE_SAMPLE_DATA=true serves the
-        // real-shape sample data captured from the board so the UI is fully clickable.
+        // Live data only — no sample/placeholder fallback. If job-search.js isn't
+        // deployed yet, this section will show its existing error states
+        // ("Couldn't load the job board right now" / "Search failed.") until it is.
         // ============================================================
 
-        // Backend function endpoint (staging). Swap when the real function is live.
-        // Mirrors how the production Netlify proxy URL is hardcoded elsewhere.
+        // Backend function endpoint. Mirrors how the production Netlify proxy
+        // URL is hardcoded elsewhere.
         const JOB_SEARCH_FN_URL = 'https://curious-rugelach-e5ffb8.netlify.app/.netlify/functions/job-search';
-        const USE_SAMPLE_DATA = true; // flip to false once the backend function is deployed
+        const USE_SAMPLE_DATA = false;
 
         // Fixed filter option sets — mirror the real search_jobs enums.
         const LK_PILLARS = ['Support', 'Retention', 'Growth', 'Operations', 'Success', 'Trust & Safety', 'Insights'];

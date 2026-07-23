@@ -872,20 +872,20 @@
         .lk-banner-copy { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 560px; margin: 0; }
 
         .lk-filters {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
         }
-        .lk-board-count { font-size: 13px; font-weight: 600; color: #93c5fd; margin-bottom: 18px; letter-spacing: 0.2px; }
+        .lk-board-count { font-size: 13px; font-weight: 600; color: #2563eb; margin-bottom: 18px; letter-spacing: 0.2px; }
         .lk-filter-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
         .lk-field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
         .lk-field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #64748b; }
         .lk-select {
             padding: 10px 12px; border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.12);
-            background: #0f172a; color: #e2e8f0;
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc; color: #0f172a;
             font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer;
         }
         .lk-select:focus { outline: 2px solid #2563eb; border-color: transparent; }
@@ -893,63 +893,63 @@
         .lk-keyword {
             flex: 1; min-width: 220px;
             padding: 11px 14px; border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.12);
-            background: #0f172a; color: #e2e8f0;
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc; color: #0f172a;
             font-size: 14px; font-family: 'DM Sans', sans-serif;
         }
         .lk-keyword:focus { outline: 2px solid #2563eb; border-color: transparent; }
 
         .lk-results-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; margin-bottom: 12px; }
         .lk-results { display: flex; flex-direction: column; gap: 10px; }
-        .lk-empty { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); border-radius: 14px; padding: 36px; text-align: center; color: #94a3b8; }
+        .lk-empty { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 14px; padding: 36px; text-align: center; color: #64748b; }
 
         .lk-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 18px 22px;
             display: flex; align-items: center; gap: 18px;
             cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .lk-card:hover { border-color: rgba(37,99,235,0.5); background: rgba(37,99,235,0.06); }
+        .lk-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.1); }
         .lk-card:focus-visible { outline: 2px solid #2563eb; }
         .lk-card-main { flex: 1; min-width: 0; }
-        .lk-card-title { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 3px; }
-        .lk-card-sub { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+        .lk-card-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+        .lk-card-sub { font-size: 13px; color: #64748b; margin-bottom: 10px; }
         .lk-card-pills { display: flex; gap: 6px; flex-wrap: wrap; }
         .lk-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-        .lk-pill-blue { background: rgba(37,99,235,0.15); color: #93c5fd; }
-        .lk-pill-slate { background: rgba(255,255,255,0.06); color: #cbd5e1; }
-        .lk-pill-green { background: rgba(34,197,94,0.15); color: #86efac; }
-        .lk-card-cta { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: #60a5fa; }
+        .lk-pill-blue { background: #dbeafe; color: #1d4ed8; }
+        .lk-pill-slate { background: #f1f5f9; color: #475569; }
+        .lk-pill-green { background: #dcfce7; color: #15803d; }
+        .lk-card-cta { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: #2563eb; }
 
-        .lk-disclaimer { font-size: 12px; color: #64748b; line-height: 1.6; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); max-width: 760px; }
+        .lk-disclaimer { font-size: 12px; color: #64748b; line-height: 1.6; margin-top: 26px; padding-top: 18px; border-top: 1px solid #e2e8f0; max-width: 760px; }
 
         /* Detail modal */
         .lk-modal-overlay {
             position: fixed; inset: 0;
-            background: rgba(5,8,16,0.7);
+            background: rgba(15,23,42,0.5);
             display: none; align-items: center; justify-content: center;
             padding: 20px; z-index: 1000;
         }
         .lk-modal-overlay.open { display: flex; }
         .lk-modal {
-            background: #0f172a;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             max-width: 620px; width: 100%;
             max-height: 85vh; overflow-y: auto;
             padding: 32px; position: relative;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.25);
         }
-        .lk-modal-close { position: absolute; top: 16px; right: 18px; background: none; border: none; color: #94a3b8; font-size: 26px; line-height: 1; cursor: pointer; padding: 0; }
-        .lk-modal-close:hover { color: #fff; }
-        .lk-detail-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: #fff; line-height: 1.2; margin-bottom: 6px; padding-right: 30px; }
-        .lk-detail-sub { font-size: 14px; color: #94a3b8; }
-        .lk-detail-desc { font-size: 14px; line-height: 1.7; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; max-height: 340px; overflow-y: auto; }
-        .lk-detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 22px; padding-top: 20px; }
-        .lk-link { color: #60a5fa; font-size: 13.5px; font-weight: 600; text-decoration: none; }
+        .lk-modal-close { position: absolute; top: 16px; right: 18px; background: none; border: none; color: #64748b; font-size: 26px; line-height: 1; cursor: pointer; padding: 0; }
+        .lk-modal-close:hover { color: #0f172a; }
+        .lk-detail-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: #0f172a; line-height: 1.2; margin-bottom: 6px; padding-right: 30px; }
+        .lk-detail-sub { font-size: 14px; color: #64748b; }
+        .lk-detail-desc { font-size: 14px; line-height: 1.7; color: #334155; border-top: 1px solid #e2e8f0; padding-top: 20px; max-height: 340px; overflow-y: auto; }
+        .lk-detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 20px; }
+        .lk-link { color: #2563eb; font-size: 13.5px; font-weight: 600; text-decoration: none; }
         .lk-link:hover { text-decoration: underline; }
 
         @media (max-width: 640px) {

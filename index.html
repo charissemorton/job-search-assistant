@@ -8367,7 +8367,6 @@ Return ONLY the JSON.`;
         // Backend function endpoint. Mirrors how the production Netlify proxy
         // URL is hardcoded elsewhere.
         const JOB_SEARCH_FN_URL = 'https://curious-rugelach-e5ffb8.netlify.app/.netlify/functions/job-search';
-        const USE_SAMPLE_DATA = false;
 
         // Fixed filter option sets — mirror the real search_jobs enums.
         const LK_PILLARS = ['Support', 'Retention', 'Growth', 'Operations', 'Success', 'Trust & Safety', 'Insights'];
@@ -8375,30 +8374,17 @@ Return ONLY the JSON.`;
         const LK_COUNTRIES = ['United States', 'United Kingdom', 'Canada', 'Spain', 'Mexico', 'Australia', 'France', 'Germany', 'India', 'Other'];
         const LK_ARRANGEMENTS = ['Remote', 'On-site', 'Hybrid'];
 
-        // Board stats (real numbers from get_stats). In production these come from the
-        // backend so the count stays live; sample values used as fallback.
-        let lkStats = { totalJobs: 593, totalCompanies: 455 };
-
-        // Sample data — real shape captured from the live board.
-        const LK_SAMPLE_FEATURED = [
-            { id: 'jlKiF2KMK', slug: 'sr-cx-programs-automation-manager-betterment', title: 'Sr. CX Programs & Automation Manager', company: 'Betterment', location: 'New York, NY', country: 'United States', arrangement: 'Hybrid', pillar: 'Support', seniority: 'lead', summary: 'Own net-new AI initiatives across customer support and operations — from business case to launch.', applyUrl: 'https://www.linkedin.com/jobs/view/4404108583', description: 'About the Role\nAs our Sr. CX Programs & Automation Manager, you\'ll own the full lifecycle of net-new AI initiatives across customer support and operations: from identifying the opportunity, building the business case, and driving implementation, through to launch and handoff.\n\nWhat We\'re Looking For\n7–10+ years in CX operations, support product management, or technical program management. Hands-on experience launching AI or automation in support environments — Zendesk AI, Intercom Fin, Decagon, or similar.' },
-            { id: 'LbJEIRDW4', slug: 'senior-manager-cx-operations-clickup', title: 'Senior Manager, CX Operations', company: 'ClickUp', location: 'Remote', country: 'Other', arrangement: 'Remote', pillar: 'Operations', seniority: 'lead', summary: 'Lead CX operations strategy and drive scalable, AI-powered customer experience at ClickUp.', applyUrl: 'https://www.linkedin.com/jobs/view/4402741384', description: 'We\'re looking for a Senior Manager, CX Operations to join our team as the trusted business partner to our global Head of Support and CX.\n\nAbout You\n8+ years in an Operations and/or Strategy role focused on Customer Support, Experience, or Success. Track record of leading technology-enabled business process transformations with strategic application of AI and automation tools.' },
-            { id: 'aa1', slug: 'customer-support-lead-monzo', title: 'Customer Support Lead, AI Tooling', company: 'Monzo', location: 'London, England, UK', country: 'United Kingdom', arrangement: 'Hybrid', pillar: 'Support', seniority: 'senior', summary: 'Shape the AI-assisted support experience for millions of customers in a regulated fintech.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000001', description: 'About the Role\nShape how AI assists our support team across chat, email, and in-app messaging. You\'ll own the tooling roadmap and work closely with engineering to ship agent-copilot features.\n\nWhat We\'re Looking For\n5+ years in customer support or CX, with at least 2 leading a team.' },
-            { id: 'aa2', slug: 'cx-insights-analyst-shopify', title: 'CX Insights Analyst', company: 'Shopify', location: 'Toronto, Ontario, Canada', country: 'Canada', arrangement: 'Remote', pillar: 'Insights', seniority: 'mid', summary: 'Turn support conversation data into product and staffing decisions across a global CX org.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000002', description: 'About the Role\nTurn millions of support interactions into decisions. You\'ll build dashboards, surface trends, and partner with product to close the loop on customer pain points.\n\nWhat We\'re Looking For\n3+ years in analytics, ideally in a support or CX context. Fluent in SQL.' },
-            { id: 'aa3', slug: 'retention-ops-manager-factorial', title: 'Retention Operations Manager', company: 'Factorial', location: 'Barcelona, Catalonia, Spain', country: 'Spain', arrangement: 'On-site', pillar: 'Retention', seniority: 'mid', summary: 'Build and run retention playbooks powered by automation for a fast-scaling SaaS.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000003', description: 'About the Role\nBuild and run retention playbooks powered by automation.\n\nWhat We\'re Looking For\n4+ years in retention, lifecycle, or CX operations. Comfortable with automation tooling.' },
-            { id: 'aa4', slug: 'head-customer-success-deel', title: 'Head of Customer Success', company: 'Deel', location: 'Remote (US)', country: 'United States', arrangement: 'Remote', pillar: 'Success', seniority: 'director', summary: 'Own the post-sale journey and scale a success function with AI-driven health scoring.', applyUrl: 'https://www.linkedin.com/jobs/view/0000000004', description: 'About the Role\nOwn the post-sale journey and scale a success function with AI-driven health scoring.\n\nWhat We\'re Looking For\n10+ years in customer success, with 5+ leading teams at a high-growth SaaS.' }
-        ];
+        // Board stats — populated from the live 'stats' backend call in initFindARole().
+        // No placeholder values; nothing renders these until the real call resolves.
+        let lkStats = { totalJobs: 0, totalCompanies: 0 };
 
         // Current results in view (featured on landing, or search results).
         let lkCurrentResults = [];
         let lkShowingFeatured = true;
 
-        // ---- Data layer: calls YOUR backend function (or sample fallback) ----
+        // ---- Data layer: calls YOUR backend function ----
 
         async function lkCallBackend(action, params) {
-            if (USE_SAMPLE_DATA) {
-                return lkSampleResponse(action, params);
-            }
             const res = await fetch(JOB_SEARCH_FN_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -8406,32 +8392,6 @@ Return ONLY the JSON.`;
             });
             if (!res.ok) throw new Error('Job board request failed: ' + res.status);
             return res.json();
-        }
-
-        function lkSampleResponse(action, params) {
-            // Simulate the backend contract against sample data.
-            if (action === 'stats') return Promise.resolve({ stats: lkStats });
-            if (action === 'featured') return Promise.resolve({ jobs: LK_SAMPLE_FEATURED });
-            if (action === 'search') {
-                const p = params || {};
-                const filtered = LK_SAMPLE_FEATURED.filter(j => {
-                    if (p.pillar && j.pillar !== p.pillar) return false;
-                    if (p.seniority && j.seniority !== p.seniority) return false;
-                    if (p.country && j.country !== p.country) return false;
-                    if (p.arrangement && j.arrangement !== p.arrangement) return false;
-                    if (p.query) {
-                        const hay = (j.title + ' ' + j.company + ' ' + j.summary).toLowerCase();
-                        if (!hay.includes(p.query.toLowerCase())) return false;
-                    }
-                    return true;
-                });
-                return Promise.resolve({ jobs: filtered });
-            }
-            if (action === 'job') {
-                const job = LK_SAMPLE_FEATURED.find(j => j.slug === params.slug);
-                return Promise.resolve({ job: job || null });
-            }
-            return Promise.resolve({});
         }
 
         // ---- Escaping helper (reuse app-wide escapeHtml if present) ----

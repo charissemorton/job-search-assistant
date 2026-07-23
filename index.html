@@ -952,6 +952,27 @@
         .lk-link { color: #2563eb; font-size: 13.5px; font-weight: 600; text-decoration: none; }
         .lk-link:hover { text-decoration: underline; }
 
+        /* Board-flow completion screen (Results tab, provenance-aware) */
+        .lk-provenance-banner {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #1d4ed8;
+            margin-bottom: 16px;
+        }
+        .lk-provenance-banner strong { color: #1e3a8a; }
+        .lk-loop-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
         @media (max-width: 640px) {
             .lk-banner { padding: 24px 20px; }
             .lk-banner-title { font-size: 24px; }
@@ -6073,6 +6094,12 @@ async function getUserSubscription() {
         let currentJobDescription = null;
         let currentAnalysis = null;
         let _preGapScore = null; // score before a gap-context re-analysis, for messaging
+
+        // Provenance for a board-sourced job (Find a Role → Tailor my resume).
+        // {title, company, location, applyUrl, boardUrl} or null for the normal
+        // paste-a-JD flow. Drives the completion screen's provenance banner,
+        // action hierarchy, and inline cover-letter stacking — see generateResume().
+        let lkJobSource = null;
         let currentSessionGapContext = false; // true only after gap modal submitted in current analysis session
         let _pendingIncomingProfile   = null; // incoming profile awaiting conflict resolution
         let _pendingAutoMergedProfile = null; // base profile with new items already merged in
@@ -6788,6 +6815,7 @@ async function getUserSubscription() {
                     analysisResult.classList.add('hidden');
                 }
                 currentAnalysis = null;
+                lkJobSource = null;
             }
 
             // Gate feature sections — anonymous users must sign up first
@@ -6865,7 +6893,8 @@ async function getUserSubscription() {
             // Reset stored analysis data
             currentAnalysis = null;
             currentJobDescription = null;
-            
+            lkJobSource = null;
+
             // Navigate to job analysis
             showSection('job-analysis-section');
         }
@@ -8504,7 +8533,7 @@ Return ONLY the JSON.`;
                 </div>
                 <div class="lk-detail-desc">${lkEsc(j.description).replace(/\n/g, '<br>')}</div>
                 <div class="lk-detail-actions">
-                    <a href="${lkEsc(j.applyUrl)}" target="_blank" rel="noopener noreferrer" class="lk-link">View original posting →</a>
+                    <a href="${lkEsc(j.boardUrl)}" target="_blank" rel="noopener noreferrer" class="lk-link">View original posting →</a>
                     <button class="btn-primary" onclick="lkTailorToJob(${index})">Tailor my resume →</button>
                 </div>
             `;
@@ -8526,6 +8555,15 @@ Return ONLY the JSON.`;
             lkCloseDetail();
             const jd = (j.description || '').replace(/<[^>]+>/g, '').trim();
             showSection('job-analysis-section', () => {
+                // Set AFTER showSection's own clearing runs (see the
+                // job-analysis-section branch above) — order matters here.
+                lkJobSource = {
+                    title: j.title,
+                    company: j.company,
+                    location: j.location,
+                    applyUrl: j.applyUrl,
+                    boardUrl: j.boardUrl
+                };
                 const jobInput = document.getElementById('job-description');
                 if (jobInput) jobInput.value = jd;
                 analyzeJob();
@@ -8756,6 +8794,15 @@ Return ONLY the raw JSON object below — no preamble, no explanation, no markdo
 
                 const response = await callClaudeAPI(systemPrompt, `Job Description:\n${jobDesc}`);
                 currentAnalysis = JSON.parse(response);
+
+                // Board-sourced job: the exact title/company are known (not a text-
+                // extraction guess), and are more accurate than whatever the AI
+                // parsed from the JD text — use them everywhere downstream
+                // (completion screen, resume/cover-letter prompts).
+                if (lkJobSource) {
+                    currentAnalysis.jobTitle = lkJobSource.title;
+                    currentAnalysis.company = lkJobSource.company;
+                }
 
                 // Gap context can only help — floor the re-analysis score at the original
                 if (isGapReanalysis && _preGapScore !== null && currentAnalysis.matchScore < _preGapScore) {
@@ -9760,19 +9807,41 @@ Return ONLY valid JSON:
                 await incrementUsage('resumes');
                 updateUsageDisplay();
                 
-                resultsContent.innerHTML = `
-                    <h3>Your Tailored Resume</h3>
-                    ${displayATSBadge(atsAnalysis)}
-                    <div class="document-output">${renderMarkdown(fullResume)}</div>
-                    <div class="button-group" style="margin-top: 24px;">
-                        <button class="btn-secondary" onclick="copyCurrentResume()">Copy Text</button>
-                        <button class="btn-primary" onclick="downloadResumeAsDOCX(event)">Download as DOCX</button>
-                    </div>
-                    <div class="button-group" style="margin-top: 16px; border-top: 2px solid #e5e7eb; padding-top: 24px;">
-                        <button class="btn-secondary" onclick="startNewJobAnalysis()">← Analyze Another Job</button>
-                        <button class="btn-primary" onclick="generateCoverLetter()">Generate Cover Letter →</button>
-                    </div>
-                `;
+                if (lkJobSource) {
+                    // Board-sourced job: provenance-aware completion screen —
+                    // "Tailored for X at Y," Download + Generate Cover Letter as
+                    // the two primary actions, View original posting / Back to CX
+                    // roles as quiet secondary/tertiary links underneath. Cover
+                    // letter generated from here stacks inline below the resume
+                    // (lk-coverletter-slot) rather than replacing the screen.
+                    resultsContent.innerHTML = `
+                        <div class="lk-provenance-banner">Tailored for <strong>${lkEsc(lkJobSource.title)}</strong> at <strong>${lkEsc(lkJobSource.company)}</strong></div>
+                        <h3>Your Tailored Resume</h3>
+                        ${displayATSBadge(atsAnalysis)}
+                        <div class="document-output" id="lk-resume-doc">${renderMarkdown(fullResume)}</div>
+                        <div class="button-group" style="margin-top: 24px;">
+                            <button class="btn-secondary" onclick="copyCurrentResume()">Copy Text</button>
+                            <button class="btn-primary" onclick="downloadResumeAsDOCX(event, document.getElementById('lk-resume-doc'))">Download as DOCX</button>
+                            <button class="btn-primary" onclick="lkGenerateCoverLetterInline()">Generate Cover Letter →</button>
+                        </div>
+                        <div id="lk-coverletter-slot"></div>
+                        ${lkRenderLoopActions()}
+                    `;
+                } else {
+                    resultsContent.innerHTML = `
+                        <h3>Your Tailored Resume</h3>
+                        ${displayATSBadge(atsAnalysis)}
+                        <div class="document-output">${renderMarkdown(fullResume)}</div>
+                        <div class="button-group" style="margin-top: 24px;">
+                            <button class="btn-secondary" onclick="copyCurrentResume()">Copy Text</button>
+                            <button class="btn-primary" onclick="downloadResumeAsDOCX(event)">Download as DOCX</button>
+                        </div>
+                        <div class="button-group" style="margin-top: 16px; border-top: 2px solid #e5e7eb; padding-top: 24px;">
+                            <button class="btn-secondary" onclick="startNewJobAnalysis()">← Analyze Another Job</button>
+                            <button class="btn-primary" onclick="generateCoverLetter()">Generate Cover Letter →</button>
+                        </div>
+                    `;
+                }
             } catch (error) {
                 console.error('Error generating resume:', error);
                 resultsContent.innerHTML = `<div class="alert alert-danger">Error generating resume: ${escapeHtml(error.message)}. Please try again.</div>`;
@@ -9797,44 +9866,13 @@ Return ONLY valid JSON:
             if (callback) callback(tone);
         }
 
-        async function generateCoverLetter(tone = null) {
-            // Check acknowledgment first
-            if (!checkAcknowledgmentBeforeGeneration(() => generateCoverLetter(tone))) {
-                return;
-            }
-
-            // Validate profile data exists
-            if (!profileData) {
-                toastWarning('No profile data found. Please upload your resume first.');
-                showSection('setup-section');
-                return;
-            }
-
-            // Validate job analysis exists
-            if (!currentAnalysis || !currentJobDescription) {
-                toastWarning('No job analysis found. Please analyze a job first.');
-                showSection('job-analysis-section');
-                return;
-            }
-
-            // Check usage limit before proceeding
-            const usageCheck = await checkUsageLimit('covers');
-            if (!usageCheck.allowed) {
-                showUpgradeModal('covers', usageCheck.reason, usageCheck.subscription);
-                return;
-            }
-
-            // Show tone selection modal if no tone chosen yet
-            if (!tone) {
-                openToneModal((selectedTone) => generateCoverLetter(selectedTone));
-                return;
-            }
-
-            const resultsContent = document.getElementById('results-content');
-            resultsContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating cover letter...</p></div>';
-            showSection('results-section');
-
-            try {
+        // Shared cover-letter generation — used by both the standard paste-a-JD
+        // flow (generateCoverLetter) and the board flow's inline-stacking
+        // completion screen (lkGenerateCoverLetterInline). Extracted so both
+        // paths run the exact same prompt, usage tracking, and cloud-save side
+        // effects rather than duplicating ~150 lines of prompt text. Returns
+        // the cover letter text; throws on failure (caller renders the error).
+        async function buildCoverLetterText(tone) {
                 // Create profile copy with conditional location
                 const profileForCover = {...profileData};
                 if (!shouldIncludeLocation()) {
@@ -9967,18 +10005,60 @@ ${tone === 'formal'
 Write the letter. Do not explain what you're doing. Do not add a subject line. Do not write anything after the closing signature.`;
 
                 const coverLetter = await callClaudeAPI(systemPrompt, `Job Description:\n${currentJobDescription}`);
-                
+
                 // Store for DOCX download
                 currentCoverLetterText = coverLetter;
-                
+
                 // Save to generated files
                 await addGeneratedFile('coverLetter', currentAnalysis.jobTitle, coverLetter);
                 await saveDocumentToCloud('cover_letter', currentAnalysis.jobTitle, currentAnalysis.company || 'Unknown Company', coverLetter);
-                
+
                 // Increment usage counter after successful generation
                 await incrementUsage('covers');
                 updateUsageDisplay();
-                
+
+                return coverLetter;
+        }
+
+        async function generateCoverLetter(tone = null) {
+            // Check acknowledgment first
+            if (!checkAcknowledgmentBeforeGeneration(() => generateCoverLetter(tone))) {
+                return;
+            }
+
+            // Validate profile data exists
+            if (!profileData) {
+                toastWarning('No profile data found. Please upload your resume first.');
+                showSection('setup-section');
+                return;
+            }
+
+            // Validate job analysis exists
+            if (!currentAnalysis || !currentJobDescription) {
+                toastWarning('No job analysis found. Please analyze a job first.');
+                showSection('job-analysis-section');
+                return;
+            }
+
+            // Check usage limit before proceeding
+            const usageCheck = await checkUsageLimit('covers');
+            if (!usageCheck.allowed) {
+                showUpgradeModal('covers', usageCheck.reason, usageCheck.subscription);
+                return;
+            }
+
+            // Show tone selection modal if no tone chosen yet
+            if (!tone) {
+                openToneModal((selectedTone) => generateCoverLetter(selectedTone));
+                return;
+            }
+
+            const resultsContent = document.getElementById('results-content');
+            resultsContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating cover letter...</p></div>';
+            showSection('results-section');
+
+            try {
+                const coverLetter = await buildCoverLetterText(tone);
                 resultsContent.innerHTML = `
                     <h3>Your Cover Letter</h3>
                     <div class="document-output">${renderMarkdown(coverLetter)}</div>
@@ -9997,8 +10077,77 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
             }
         }
 
-        async function downloadResumeAsDOCX(event) {
-            const documentOutput = document.querySelector('#results-section .document-output');
+        // ---- Board-flow completion screen: inline cover-letter stacking ----
+        // Called from the "Generate Cover Letter" action on a board-sourced
+        // completion screen (see generateResume()'s lkJobSource branch). Appends
+        // the cover letter below the existing resume block instead of replacing
+        // the screen — both documents stay visible, each independently
+        // downloadable, per the board-flow-only design (not applied to the
+        // standard paste-a-JD Results screen).
+        function lkRenderLoopActions() {
+            return `
+                <div class="lk-loop-actions" id="lk-loop-footer">
+                    <a href="${lkEsc(lkJobSource.boardUrl)}" target="_blank" rel="noopener noreferrer" class="lk-link">View original posting →</a>
+                    <a href="#" onclick="showSection('find-role-section'); return false;" class="lk-link">← Back to CX roles</a>
+                </div>
+            `;
+        }
+
+        async function lkGenerateCoverLetterInline(tone = null) {
+            if (!lkJobSource) { generateCoverLetter(tone); return; } // safety net — shouldn't happen from this screen
+
+            if (!checkAcknowledgmentBeforeGeneration(() => lkGenerateCoverLetterInline(tone))) {
+                return;
+            }
+            if (!profileData) {
+                toastWarning('No profile data found. Please upload your resume first.');
+                showSection('setup-section');
+                return;
+            }
+            if (!currentAnalysis || !currentJobDescription) {
+                toastWarning('No job analysis found. Please analyze a job first.');
+                showSection('job-analysis-section');
+                return;
+            }
+            const usageCheck = await checkUsageLimit('covers');
+            if (!usageCheck.allowed) {
+                showUpgradeModal('covers', usageCheck.reason, usageCheck.subscription);
+                return;
+            }
+            if (!tone) {
+                openToneModal((selectedTone) => lkGenerateCoverLetterInline(selectedTone));
+                return;
+            }
+
+            // lk-coverletter-slot sits between the resume block and the loop-actions
+            // footer in the DOM (see generateResume()'s board-flow template), so
+            // filling it in place already lands the cover letter above the footer —
+            // no repositioning needed.
+            const coverSlot = document.getElementById('lk-coverletter-slot');
+            if (coverSlot) coverSlot.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating cover letter...</p></div>';
+
+            try {
+                const coverLetter = await buildCoverLetterText(tone);
+                if (coverSlot) {
+                    coverSlot.innerHTML = `
+                        <div class="button-group" style="margin-top: 16px; border-top: 2px solid #e5e7eb; padding-top: 24px;">
+                            <h3>Your Cover Letter</h3>
+                        </div>
+                        <div class="document-output" id="lk-coverletter-doc">${renderMarkdown(coverLetter)}</div>
+                        <div class="button-group" style="margin-top: 24px;">
+                            <button class="btn-secondary" onclick="copyCurrentCoverLetter()">Copy Text</button>
+                            <button class="btn-primary" onclick="downloadCoverLetterAsDOCX(document.getElementById('lk-coverletter-doc'))">Download as DOCX</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error generating cover letter:', error);
+                if (coverSlot) coverSlot.innerHTML = `<div class="alert alert-danger">Error generating cover letter. Please try again.</div>`;
+            }
+        }
+
+        async function downloadResumeAsDOCX(event, sourceEl) {
+            const documentOutput = sourceEl || document.querySelector('#results-section .document-output');
             if (!documentOutput) {
                 toastWarning('No resume found to download. Please generate a resume first.');
                 return;
@@ -10085,8 +10234,8 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
             }
         }
 
-        async function downloadCoverLetterAsDOCX() {
-            const documentOutput = document.querySelector('#results-section .document-output');
+        async function downloadCoverLetterAsDOCX(sourceEl) {
+            const documentOutput = sourceEl || document.querySelector('#results-section .document-output');
             if (!documentOutput) {
                 toastWarning('No cover letter found to download. Please generate a cover letter first.');
                 return;

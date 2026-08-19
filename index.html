@@ -10200,7 +10200,12 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
                 return;
             }
             
-            const resumeText = documentOutput.textContent;
+            // Use the raw Markdown, not the rendered preview. renderMarkdown() joins
+            // its output with '' (no newlines) and consumes the # and ** markers, so
+            // documentOutput.textContent is a single unparseable line. The DOCX builder
+            // splits on \n to find sections. Falls back to the scrape only if the
+            // global is somehow unset.
+            const resumeText = currentResumeText || documentOutput.textContent;
             
             try {
                 // Show loading indicator
@@ -10288,7 +10293,9 @@ Write the letter. Do not explain what you're doing. Do not add a subject line. D
                 return;
             }
             
-            const coverLetterText = documentOutput.textContent;
+            // Same reason as downloadResumeAsDOCX: the rendered preview has no line
+            // breaks, and this builder splits on \n\n for paragraphs.
+            const coverLetterText = currentCoverLetterText || documentOutput.textContent;
             
             try {
                 if (typeof JSZip === 'undefined') {

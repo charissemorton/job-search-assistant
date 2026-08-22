@@ -8698,26 +8698,69 @@ Return ONLY the JSON.`;
             try {
                 const systemPrompt = `You are an experienced recruiter analyzing job match quality using a calibrated scoring system.
 
-SCORING FRAMEWORK (Total = 100 points):
-- Required Qualifications = 80 points (divide evenly among all required quals)
-- Preferred/Bonus Qualifications = 20 points (divide evenly among all preferred quals)
-- Maximum possible score = 100%
+YOUR JOB IS GRADING, NOT ARITHMETIC:
+Assign a credit percentage (0-100) to each individual qualification. Do NOT calculate
+points, bucket subtotals, weightings, or an overall match score. The application computes
+all of that from your credit percentages. Any total you write will be discarded.
 
-PARTIAL CREDIT RULES:
-- Exact match = 100% of points for that qualification
-- Close match = 90-95% of points (see specific rubrics below)
-- Transferable skill = 60-80% of points (see industry equivalency table)
-- Related but not direct = 60-70% of points
-- Missing entirely = 0% of points
+PARTIAL CREDIT RULES (the creditPercent you assign to one qualification):
+- Exact match = 100
+- Close match = 90-95 (see specific rubrics below)
+- Transferable skill = 60-80 (see industry equivalency table)
+- Related but not direct = 60-70
+- Missing entirely = 0
 
-SECTION HEADER CLASSIFICATION (Fix: Required vs Preferred):
-Identify REQUIRED qualifications (80-point bucket) from these indicators:
+STEP 1 - SELECTION (deciding which lines get graded at all):
+
+A job posting contains two different kinds of statements. Grade only the first kind.
+
+A QUALIFICATION describes the CANDIDATE - experience they have, a skill they possess,
+a credential they hold, a trait they demonstrate. Test: "the candidate has ___" or
+"the candidate is ___".
+  e.g. "5+ years of B2B sales experience" / "Excellent organizational skills" /
+       "Bachelor's degree in Business" / "Alignment with our core values"
+
+A RESPONSIBILITY describes the JOB - what the person will do after they are hired.
+Test: "the person in this role will ___".
+  e.g. "Conduct daily calls and in-person visits" / "Utilize CRM daily to track sales
+       activity" / "Collaborate with the Marketing Department"
+Do NOT grade responsibilities. Do not rewrite one into a qualification.
+
+Sections that hold QUALIFICATIONS - grade these:
+  "Requirements", "Required Qualifications", "Qualifications", "Minimum Qualifications",
+  "Basic Qualifications", "Must Have", "Essential Skills", "Candidate Attributes",
+  "About You", "Who You Are", "What You'll Bring", "What You Bring", "You Have",
+  "Skills and Experience", "Nice to Have", "Preferred", "Bonus"
+
+Sections that hold RESPONSIBILITIES - do not grade these:
+  "Responsibilities", "Daily Responsibilities", "Key Responsibilities", "What You'll Do",
+  "Scope of Position", "Role Overview", "Duties", "Essential Functions",
+  "A Day in the Life", "About the Role", "The Opportunity"
+
+Sections that are NEITHER - ignore entirely:
+  compensation, benefits, EEO statements, company background, application instructions,
+  keyword or tag lists, "Similar jobs" listings, and any additional job postings that
+  appear in the pasted text. Grade one posting only - the first one.
+
+COMPLETENESS: grade every bullet in the qualification sections, in the order the posting
+lists them. Do not skip one. Do not add one. If a bullet is truncated or unreadable,
+grade it anyway and say so in the assessment.
+
+QUOTE THE POSTING: the "qualification" field must reproduce the posting's own wording,
+trimmed but not reworded. This is how the user checks your work.
+
+FALLBACK: if the posting has NO qualification section at all - only responsibilities -
+then derive qualifications from the responsibilities, and start each "qualification"
+field with "Implied: " so it is visibly an inference.
+
+STEP 2 - CLASSIFICATION (required bucket vs preferred bucket):
+Identify REQUIRED qualifications (required bucket) from these indicators:
 - Section headers: "Requirements", "Required Qualifications", "Must Have", "Minimum Qualifications", 
   "Who You Are", "What You'll Bring", "Essential Skills", "Basic Qualifications", "You Have"
 - Inline keywords: "required", "must", "essential", "minimum", "mandatory"
 - Items appearing before any "preferred" section
 
-Identify PREFERRED qualifications (20-point bucket) from these indicators:
+Identify PREFERRED qualifications (preferred bucket) from these indicators:
 - Section headers: "Nice to Have", "Preferred", "Bonus", "Plus", "What Would Be Amazing", 
   "Ideal Candidate", "Bonus Points", "We'd Love If You Have"
 - Inline keywords: "preferred", "nice to have", "bonus", "plus", "ideally", "optionally"
@@ -8801,10 +8844,12 @@ SCORE INTERPRETATION:
 - Below 60%: Poor Match - Missing critical requirements
 
 IMPORTANT GUIDELINES:
-1. First, identify which qualifications are REQUIRED vs PREFERRED using section header rules above
+1. First select which lines are qualifications at all (Step 1 - never grade a responsibility),
+   then classify each one REQUIRED vs PREFERRED (Step 2)
 2. Parse combined requirements (multi-part bullets) into separate scorable components
-3. Calculate required score (out of 80 points) by evaluating each required qualification
-4. Calculate preferred score (out of 20 points) by evaluating each preferred qualification
+3. Grade EVERY required qualification: name the requirement, state the evidence for or
+   against it from the candidate profile, then assign its creditPercent - in that order
+4. Grade every preferred qualification the same way
 5. Apply specific rubrics: years (explicit scale), degrees (explicit rules), tech names (aliases)
 6. Use industry equivalency ranges (55-80%) for transferable skills across domains
 7. Focus on ability to DO THE JOB, not perfect credential matching
@@ -8814,27 +8859,55 @@ Candidate Profile:
 ${JSON.stringify(profileData)}
 
 Return ONLY the raw JSON object below — no preamble, no explanation, no markdown fences. Your entire response must be valid JSON starting with { and ending with }.
+
+Emit the fields in exactly the order shown: the per-qualification grading comes before
+strengths and gaps. There is no overall score field. Do not add one.
 {
-  "matchScore": <number 0-100, calculated using the framework above>,
   "jobTitle": "<extracted job title>",
   "company": "<extracted company name or 'Unknown Company'>",
   "requiredQuals": {
-    "total": <number of required qualifications>,
-    "pointsEarned": <points earned out of 80>,
-    "details": ["brief explanation of scoring for each required qual"]
+    "details": [
+      {
+        "qualification": "<the requirement, as the posting words it>",
+        "assessment": "<one or two sentences citing the specific evidence for or against it in the candidate profile>",
+        "creditPercent": <number 0-100>
+      }
+    ]
   },
   "preferredQuals": {
-    "total": <number of preferred qualifications>,
-    "pointsEarned": <points earned out of 20>,
-    "details": ["brief explanation of scoring for each preferred qual"]
+    "details": [ <same three fields per item; empty array [] if the posting has no preferred qualifications> ]
   },
   "strengths": ["strength1", "strength2", ...],
   "gaps": ["gap1", "gap2", ...],
   "recommendations": ["rec1", "rec2", ...]
+}
+
+EXAMPLE OUTPUT (abbreviated - a posting with three required and one preferred qualification):
+{
+  "jobTitle": "Account Executive",
+  "company": "Northwind Logistics",
+  "requiredQuals": {
+    "details": [
+      {"qualification": "5+ years of B2B sales experience", "assessment": "Seven years of enterprise B2B sales across two employers, exceeding the requirement.", "creditPercent": 100},
+      {"qualification": "Experience selling into the healthcare sector", "assessment": "All sales experience is in freight and logistics; no healthcare accounts listed. Consultative selling skills transfer across a very different domain.", "creditPercent": 60},
+      {"qualification": "Salesforce proficiency", "assessment": "Lists HubSpot and Zoho CRM administration rather than Salesforce - closely comparable tooling.", "creditPercent": 90}
+    ]
+  },
+  "preferredQuals": {
+    "details": [
+      {"qualification": "Bachelor's degree in Business or a related field", "assessment": "Holds a B.S. in Marketing, a closely related field.", "creditPercent": 95}
+    ]
+  },
+  "strengths": ["..."],
+  "gaps": ["..."],
+  "recommendations": ["..."]
 }`;
 
                 const response = await callClaudeAPI(systemPrompt, `Job Description:\n${jobDesc}`);
                 currentAnalysis = JSON.parse(response);
+
+                // The model grades each qualification; the score is computed here, in code.
+                computeAnalysisScore(currentAnalysis);
 
                 // Board-sourced job: the exact title/company are known (not a text-
                 // extraction guess), and are more accurate than whatever the AI
@@ -8871,6 +8944,95 @@ Return ONLY the raw JSON object below — no preamble, no explanation, no markdo
             }
         }
 
+        /**
+         * Compute the match score in code from the model's per-qualification credit
+         * percentages. The model grades each qualification and nothing else - it does not
+         * return a total. Previously the model reported matchScore and pointsEarned itself,
+         * and because matchScore was emitted before the itemised grading it was effectively
+         * a first impression that the grading below it could no longer correct.
+         *
+         * Point pools:
+         *   required + preferred both present -> 80 / 20
+         *   posting has no preferred quals    -> required carries the full 100
+         *   posting has no required quals     -> preferred carries the full 100
+         *
+         * Mutates and returns `analysis`.
+         */
+        function computeAnalysisScore(analysis) {
+            const readBucket = (raw) => {
+                const details = Array.isArray(raw && raw.details) ? raw.details : [];
+                const graded = details.filter(d => d && typeof d === 'object' && d.creditPercent != null);
+                // Legacy shape: details arrived as plain strings with the scoring baked into
+                // prose. Nothing machine-readable to recompute from.
+                return { details, graded, legacy: details.length > 0 && graded.length === 0 };
+            };
+
+            const req = readBucket(analysis.requiredQuals);
+            const pref = readBucket(analysis.preferredQuals);
+
+            if (req.legacy || pref.legacy) {
+                debugLog('computeAnalysisScore: legacy detail shape - falling back to model-reported score');
+            } else {
+                const reqCount = req.graded.length;
+                const prefCount = pref.graded.length;
+
+                let reqPool, prefPool;
+                if (reqCount > 0 && prefCount > 0) { reqPool = 80;  prefPool = 20;  }
+                else if (reqCount > 0)             { reqPool = 100; prefPool = 0;   }
+                else if (prefCount > 0)            { reqPool = 0;   prefPool = 100; }
+                else                               { reqPool = 0;   prefPool = 0;   }
+
+                const earned = (graded, pool) => {
+                    if (!graded.length || !pool) return 0;
+                    const perQual = pool / graded.length;
+                    return graded.reduce((sum, d) => {
+                        const pct = Math.min(100, Math.max(0, Number(d.creditPercent) || 0));
+                        return sum + (pct / 100) * perQual;
+                    }, 0);
+                };
+
+                const reqEarned  = earned(req.graded, reqPool);
+                const prefEarned = earned(pref.graded, prefPool);
+
+                analysis.requiredQuals = {
+                    total: reqCount,
+                    details: req.details,
+                    pointsEarned: reqEarned,
+                    pointsPossible: reqPool
+                };
+                analysis.preferredQuals = {
+                    total: prefCount,
+                    details: pref.details,
+                    pointsEarned: prefEarned,
+                    pointsPossible: prefPool
+                };
+
+                if (reqPool || prefPool) {
+                    analysis.matchScore = Math.round(reqEarned + prefEarned);
+                }
+            }
+
+            if (typeof analysis.matchScore !== 'number' || !isFinite(analysis.matchScore)) {
+                throw new Error('Analysis returned no gradable qualifications');
+            }
+            return analysis;
+        }
+
+        /**
+         * Render one graded qualification line. Handles both the object shape and the
+         * legacy plain-string shape.
+         */
+        function formatQualDetail(d) {
+            if (typeof d === 'string') return escapeHtml(d);
+            if (!d || typeof d !== 'object') return '';
+            const name = escapeHtml(d.qualification || '');
+            const note = escapeHtml(d.assessment || '');
+            const pct = d.creditPercent != null
+                ? ` <span style="white-space:nowrap;">(${Math.round(Math.min(100, Math.max(0, Number(d.creditPercent) || 0)))}% credit)</span>`
+                : '';
+            return `<strong>${name}</strong>${pct}${note ? ` — ${note}` : ''}`;
+        }
+
         function displayAnalysisResults() {
             const score = currentAnalysis.matchScore;
             let matchClass = 'match-poor';
@@ -8895,26 +9057,28 @@ Return ONLY the raw JSON object below — no preamble, no explanation, no markdo
             // Build score breakdown HTML
             let scoreBreakdown = '';
             if (currentAnalysis.requiredQuals && currentAnalysis.preferredQuals) {
-                const reqPercentage = ((currentAnalysis.requiredQuals.pointsEarned / 80) * 100).toFixed(0);
-                const prefPercentage = currentAnalysis.preferredQuals.total > 0 
-                    ? ((currentAnalysis.preferredQuals.pointsEarned / 20) * 100).toFixed(0) 
-                    : 0;
-                
+                // Point pools are set by computeAnalysisScore and vary with what the posting
+                // actually contains - a posting with no preferred section gives the required
+                // qualifications the full 100 rather than capping the candidate at 80.
+                const bucketRow = (label, bucket, emptyNote) => {
+                    const details = Array.isArray(bucket.details) ? bucket.details : [];
+                    const pool = bucket.pointsPossible;
+                    const heading = (pool > 0)
+                        ? `<strong>${label}:</strong> ${(bucket.pointsEarned || 0).toFixed(1)}/${pool} points (${Math.round(((bucket.pointsEarned || 0) / pool) * 100)}%)`
+                        : `<strong>${label}:</strong> <span style="font-weight:normal;">${emptyNote}</span>`;
+                    const lines = details.length
+                        ? `<div style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">
+                                ${details.map(d => `• ${formatQualDetail(d)}`).join('<br>')}
+                           </div>`
+                        : '';
+                    return `<div style="margin-bottom: 12px;">${heading}${lines}</div>`;
+                };
+
                 scoreBreakdown = `
                     <div style="background: #f9fafb; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0;">
                         <h4 style="margin-bottom: 16px;">📊 Score Breakdown</h4>
-                        <div style="margin-bottom: 12px;">
-                            <strong>Required Qualifications:</strong> ${currentAnalysis.requiredQuals.pointsEarned.toFixed(1)}/80 points (${reqPercentage}%)
-                            <div style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">
-                                ${currentAnalysis.requiredQuals.details.map(d => `• ${d}`).join('<br>')}
-                            </div>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <strong>Preferred Qualifications:</strong> ${currentAnalysis.preferredQuals.pointsEarned.toFixed(1)}/20 points (${prefPercentage}%)
-                            <div style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">
-                                ${currentAnalysis.preferredQuals.details.map(d => `• ${d}`).join('<br>')}
-                            </div>
-                        </div>
+                        ${bucketRow('Required Qualifications', currentAnalysis.requiredQuals, 'None identified in this posting — not counted')}
+                        ${bucketRow('Preferred Qualifications', currentAnalysis.preferredQuals, 'None identified in this posting — not counted')}
                         <div style="border-top: 2px solid #667eea; padding-top: 12px; margin-top: 12px;">
                             <strong>Total Score:</strong> ${score}%
                         </div>
@@ -9770,7 +9934,10 @@ Return ONLY valid JSON:
                     company: currentAnalysis.company || 'target company',
                     matchScore: currentAnalysis.matchScore,
                     topStrengths: currentAnalysis.strengths?.slice(0, 5) || [],
-                    keyRequirements: currentAnalysis.requiredQuals?.details?.slice(0, 8) || [],
+                    keyRequirements: (currentAnalysis.requiredQuals?.details || [])
+                        .slice(0, 8)
+                        .map(d => typeof d === 'string' ? d : (d && d.qualification) || '')
+                        .filter(Boolean),
                     matchedStrengths: currentAnalysis.strengths || []
                 };
                 
